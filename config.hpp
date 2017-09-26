@@ -13,13 +13,29 @@
 
 namespace StarGlob
 {
+    struct Glob : public JSON::Stringifiable <Glob>
+                  , public JSON::Parsable <Glob>
+    {
+        /// source file root
+        std::string fileRoot;
+
+        /// path prefix to prepend into tar.
+        boost::optional <std::string> pathPrefix;
+
+        /// Wildcard globber expression
+        std::vector <std::string> globExpressions;
+
+        /// directory blacklist (no wildcards)
+        boost::optional <std::vector <std::string>> directoryFilter;
+
+        /// file blacklist to exclude from globber. (say *.cpp is globbed and main.cpp excluded).
+        boost::optional <std::vector <std::string>> fileFilter;
+    };
+
     struct Config : public JSON::Stringifiable <Config>
                   , public JSON::Parsable <Config>
     {
-        std::string fileRoot;
-        std::vector <std::string> globExpressions;
-        boost::optional <std::vector <std::string>> directoryFilter;
-        boost::optional <std::vector <std::string>> fileFilter;
+        std::vector <Glob> globbers;
     };
 
     Config loadConfig(std::istream& json);
@@ -28,6 +44,12 @@ namespace StarGlob
 
 BOOST_FUSION_ADAPT_STRUCT
 (
+    StarGlob::Glob,
+    fileRoot, globExpressions, directoryFilter, fileFilter, pathPrefix
+)
+
+BOOST_FUSION_ADAPT_STRUCT
+(
     StarGlob::Config,
-    fileRoot, globExpressions, directoryFilter, fileFilter
+    globbers
 )

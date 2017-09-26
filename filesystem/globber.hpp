@@ -18,15 +18,15 @@ namespace StarGlob
         void setBlackList(std::vector <std::string> const& blackList);
         void setDirectoryBlackList(std::vector <std::string> const& blackList);
 
-        std::vector <boost::filesystem::path> glob(std::string const& mask);
-        std::vector <boost::filesystem::path> globRecursive(std::string const& mask);
+        std::vector <boost::filesystem::path> glob(std::string const& mask, bool prependRoot);
+        std::vector <boost::filesystem::path> globRecursive(std::string const& mask, bool prependRoot);
 
-        void glob(std::string const& mask, std::vector <boost::filesystem::path>& files);
-        void globRecursive(std::string const& mask, std::vector <boost::filesystem::path>& files);
+        void glob(std::string const& mask, std::vector <boost::filesystem::path>& files, bool prependRoot);
+        void globRecursive(std::string const& mask, std::vector <boost::filesystem::path>& files, bool prependRoot);
 
     private:
         template <typename IteratorT>
-        void globImpl(IteratorT& i, std::vector <boost::filesystem::path>& result, std::string const& mask)
+        void globImpl(IteratorT& i, std::vector <boost::filesystem::path>& result, std::string const& mask, bool prependRoot)
         {
             if (exists(i->status()))    // does p actually exist?
             {
@@ -42,7 +42,12 @@ namespace StarGlob
                     std::replace(pathTemp.begin(), pathTemp.end(), '\\', '/');
                     auto path = boost::filesystem::path{pathTemp};
                     if (checkMask(path, mask) && !isBlacklisted(path))
-                        result.push_back(path);
+                    {
+                        if (prependRoot)
+                            result.push_back(root_ / path);
+                        else
+                            result.push_back(path);
+                    }
                 }
             }
         }

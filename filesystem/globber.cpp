@@ -43,34 +43,34 @@ namespace StarGlob
         return false;
     }
 //---------------------------------------------------------------------------------------------------------------------
-    std::vector <boost::filesystem::path> Globber::glob(std::string const& mask)
+    std::vector <boost::filesystem::path> Globber::glob(std::string const& mask, bool prependRoot)
     {
         std::vector <boost::filesystem::path> result;
-        glob(mask, result);
+        glob(mask, result, prependRoot);
         return result;
     }
 //---------------------------------------------------------------------------------------------------------------------
-    std::vector <boost::filesystem::path> Globber::globRecursive(std::string const& mask)
+    std::vector <boost::filesystem::path> Globber::globRecursive(std::string const& mask, bool prependRoot)
     {
         std::vector <boost::filesystem::path> result;
-        globRecursive(mask, result);
+        globRecursive(mask, result, prependRoot);
         return result;
     }
 //---------------------------------------------------------------------------------------------------------------------
-    void Globber::glob(std::string const& mask, std::vector <boost::filesystem::path>& files)
+    void Globber::glob(std::string const& mask, std::vector <boost::filesystem::path>& files, bool prependRoot)
     {
         using namespace boost::filesystem;
 
         for (directory_iterator i{root_}, end; i != end; ++i)
-            globImpl(i, files, mask);
+            globImpl(i, files, mask, prependRoot);
     }
 //---------------------------------------------------------------------------------------------------------------------
-    void Globber::globRecursive(std::string const& mask, std::vector <boost::filesystem::path>& files)
+    void Globber::globRecursive(std::string const& mask, std::vector <boost::filesystem::path>& files, bool prependRoot)
     {
         using namespace boost::filesystem;
 
         for (recursive_directory_iterator i{root_}, end; i != end; ++i)
-            globImpl(i, files, mask);
+            globImpl(i, files, mask, prependRoot);
     }
 //---------------------------------------------------------------------------------------------------------------------
     bool Globber::checkMask(boost::filesystem::path const& p, std::string const& mask)

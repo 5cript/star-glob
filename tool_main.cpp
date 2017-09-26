@@ -50,9 +50,11 @@ int main(int argc, char** argv)
             std::cerr << "cannot create config.\n";
             return 1;
         }
+        StarGlob::Glob glob;
         StarGlob::Config exampleConfig;
-        exampleConfig.fileRoot = ".";
-        exampleConfig.globExpressions.push_back("*.*");
+        glob.fileRoot = ".";
+        glob.globExpressions.push_back("*.*");
+        exampleConfig.globbers.push_back(glob);
         StarGlob::saveConfig(writer, exampleConfig);
         return 0;
     }
@@ -77,31 +79,37 @@ int main(int argc, char** argv)
     }
     auto&& config = loadConfig(configFile);
 
-    auto files = collectFiles(config);
-
-    //TapeMaker<StarTape::CompressionType::Bzip2> tapeMaker{output};
     TapeMaker tapeMaker{output};
-    tapeMaker.makeTape(std::begin(files), std::end(files));
+    for (auto const& glob : config.globbers)
+    {
+        auto files = collectFiles(glob);
+
+        //TapeMaker<StarTape::CompressionType::Bzip2> tapeMaker{output};
+        std::string prefix;
+        if (glob.pathPrefix)
+            prefix = glob.pathPrefix.get();
+        tapeMaker.addFiles(std::begin(files), std::end(files), glob.fileRoot, prefix);
+    }
 
     return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
-std::vector <boost::filesystem::path> collectFiles(StarGlob::Config const& config)
+std::vector <boost::filesystem::path> collectFiles(StarGlob::Glob const& glob)
 {
     using namespace StarGlob;
 
-    Globber globber{config.fileRoot};
+    Globber globber{glob.fileRoot};
 
     // glob filtering
-    if (config.directoryFilter)
-        globber.setDirectoryBlackList(config.directoryFilter.get());
-    if (config.fileFilter)
-        globber.setBlackList(config.fileFilter.get());
+    if (glob.directoryFilter)
+        globber.setDirectoryBlackList(glob.directoryFilter.get());
+    if (glob.fileFilter)
+        globber.setBlackList(glob.fileFilter.get());
 
     // collect files
     std::vector <boost::filesystem::path> fileContainer;
-    for (auto const& mask : config.globExpressions)
-        globber.globRecursive(mask, fileContainer);
+    for (auto const& mask : glob.globExpressions)
+        globber.globRecursive(mask, fileContainer, false);
 
     return fileContainer;
 }
