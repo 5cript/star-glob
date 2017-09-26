@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+# Project
+*.cbp
+*.depend
+*_build_log.html
+
+# Explicit
+build/*
+build.sh
+config.json
