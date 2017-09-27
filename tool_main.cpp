@@ -23,6 +23,7 @@ int main(int argc, char** argv)
         ("config,f", po::value<std::string>(&configPath)->default_value("./config.json"), "config to use")
         ("output,o", po::value<std::string>(&output), "file name to write to")
         ("init,i", "initialize with default config")
+        ("make-hashes,h", "make __meta dir with hashes of each file")
     ;
 
     po::variables_map vm;
@@ -80,9 +81,10 @@ int main(int argc, char** argv)
     auto&& config = loadConfig(configFile);
 
     TapeMaker tapeMaker{output};
+    HashMap hashes;
     for (auto const& glob : config.globbers)
     {
-        auto files = collectFiles(glob);
+        auto files = collectFiles(glob, hashes);
 
         //TapeMaker<StarTape::CompressionType::Bzip2> tapeMaker{output};
         std::string prefix;
@@ -90,15 +92,26 @@ int main(int argc, char** argv)
             prefix = glob.pathPrefix.get();
         tapeMaker.addFiles(std::begin(files), std::end(files), glob.fileRoot, prefix);
     }
+    if (vm.count("make-hashes"))
+    {
+        std::ofstream hashWriter{"hashes.json", std::ios_base::binary};
+        hashWriter << hashes;
+        std::vector <boost::filesystem::path> hashFile;
+        hashFile.push_back("hashes.json");
+        tapeMaker.addFiles(std::begin(hashFile), std::end(hashFile), ".", "__meta/");
+    }
+    tapeMaker.apply();
 
     return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
-std::vector <boost::filesystem::path> collectFiles(StarGlob::Glob const& glob)
+std::vector <boost::filesystem::path> collectFiles(StarGlob::Glob const& glob, StarGlob::HashMap& hashes)
 {
     using namespace StarGlob;
 
     Globber globber{glob.fileRoot};
+
+    globber.setHashMap(hashes);
 
     // glob filtering
     if (glob.directoryFilter)
@@ -110,6 +123,8 @@ std::vector <boost::filesystem::path> collectFiles(StarGlob::Glob const& glob)
     std::vector <boost::filesystem::path> fileContainer;
     for (auto const& mask : glob.globExpressions)
         globber.globRecursive(mask, fileContainer, false);
+
+    hashes = *globber.hashMap();
 
     return fileContainer;
 }

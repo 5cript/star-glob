@@ -32,6 +32,26 @@ find_package(Boost REQUIRED COMPONENTS
 	program_options
 )
 
+find_package(BZip2)
+find_package(ZLIB)
+
+if(BZIP2_FOUND)
+	message("-- BZip2 found, adding to target")
+	target_compile_definitions(${star_glob} PUBLIC ENABLE_BZIP2=1)
+	target_compile_definitions(${star_glob_tool} PUBLIC ENABLE_BZIP2=1)
+else()
+	set(BZIP2_LIBRARIES "")
+endif()
+
+if(ZLIB_FOUND)
+	message("-- zlib found, adding to target")
+	target_compile_definitions(${star_glob} PUBLIC ENABLE_GZIP=1)
+	target_compile_definitions(${star_glob_tool} PUBLIC ENABLE_GZIP=1)
+else()
+	set(ZLIB_LIBRARIES "")
+endif()
+
+
 find_library(LSTARTAPE NAMES star_tape PATHS "../star-tape/build" "star-tape/build" STATIC)
 find_library(LSIMPLEJSON NAMES SimpleJSON PATHS "../SimpleJSON/build" "SimpleJSON/build" STATIC)
 
@@ -40,8 +60,8 @@ message("	${LSIMPLEJSON}")
 message("	${LSTARTAPE}")
 
 # link
-target_link_libraries(${star_glob} ${LSTARTAPE} ${LSIMPLEJSON} Boost::program_options Boost::iostreams Boost::filesystem Boost::system)
-target_link_libraries(${star_glob_tool} ${LSTARTAPE} ${LSIMPLEJSON} Boost::program_options Boost::iostreams Boost::filesystem Boost::system)
+target_link_libraries(${star_glob} ${LSTARTAPE} ${LSIMPLEJSON} Boost::program_options Boost::iostreams Boost::filesystem Boost::system ${BZIP2_LIBRARIES} ${ZLIB_LIBRARIES})
+target_link_libraries(${star_glob_tool} ${LSTARTAPE} ${LSIMPLEJSON} Boost::program_options Boost::iostreams Boost::filesystem Boost::system ${BZIP2_LIBRARIES} ${ZLIB_LIBRARIES})
 
 # include
 target_include_directories(${star_glob} PUBLIC "..")

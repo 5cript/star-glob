@@ -1,17 +1,24 @@
 #pragma once
 
-#define ENABLE_BZIP2 1
-#define ENABLE_GZIP 1
-
 #include <star-tape/star_tape.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include <type_traits>
 #include <fstream>
 
+#include <iostream>
+
 namespace StarGlob
 {
-    template <auto Compression = StarTape::CompressionType::None>
+#if defined(ENABLE_BZIP2) && ENABLE_BZIP2 == 1
+    constexpr auto BestAvailableCompression = StarTape::CompressionType::Bzip2;
+#elif defined(ENABLE_GZIP) && ENABLE_GZIP == 1
+    constexpr auto BestAvailableCompression = StarTape::CompressionType::Gzip;
+#else
+    constexpr auto BestAvailableCompression = StarTape::CompressionType::None;
+#endif // ENABLE_GZIP
+
+    template <auto Compression = BestAvailableCompression>
     class TapeMaker
     {
     public:
@@ -26,20 +33,25 @@ namespace StarGlob
             , bundle_{
                 [this]()
                 {
+#if defined(ENABLE_BZIP2) && ENABLE_BZIP2 == 1
                     if constexpr(Compression == StarTape::CompressionType::Bzip2)
                     {
                         if (fileName_.extension() != ".bz2")
                             fileName_ += ".bz2";
                     }
-                    else if constexpr(Compression == StarTape::CompressionType::Gzip)
+#endif // ENABLE_BZIP2
+#if defined(ENABLE_GZIP) && ENABLE_GZIP == 1
+                    if constexpr(Compression == StarTape::CompressionType::Gzip)
                     {
                         if (fileName_.extension() != ".gz")
                             fileName_ += ".gz";
                     }
+#endif // ENABLE_GZIP
 
                     return StarTape::createOutputFileArchive <Compression> (fileName_.string());
                 }()
             }
+            , operations_{}
         {
         }
 
@@ -56,15 +68,21 @@ namespace StarGlob
         {
             namespace fs = boost::filesystem;
             using namespace StarTape::TapeOperations;
-            auto&& waterfall = StarTape::TapeWaterfall{};
             for (auto i = begin; i != end; ++i)
             {
                 if (prefix.empty())
-                    waterfall << AddFile((fs::path{fileRoot} / *i).string());
+                    operations_ << AddFile((fs::path{fileRoot} / *i).string());
                 else
-                    waterfall << AddFile((fs::path{fileRoot} / *i).string(), (fs::path{prefix} / *i).lexically_normal().string());
+                    operations_ << AddFile((fs::path{fileRoot} / *i).string(), (fs::path{prefix} / *i).lexically_normal().string());
             }
-            waterfall.apply(&archive(bundle_));
+        }
+
+        /**
+         *  Writes changes.
+         */
+        void apply()
+        {
+            operations_.apply(&archive(bundle_), nullptr, false);
         }
 
     private:
@@ -73,5 +91,6 @@ namespace StarGlob
             typename StarTape::CompressionTypeToWriter <compression_type>::type,
             std::ofstream
         > bundle_;
+        StarTape::TapeWaterfall operations_;
     };
 }

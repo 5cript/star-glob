@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../hash_map.hpp"
+
 #include <boost/filesystem.hpp>
 
 #include <string>
@@ -24,6 +26,13 @@ namespace StarGlob
         void glob(std::string const& mask, std::vector <boost::filesystem::path>& files, bool prependRoot);
         void globRecursive(std::string const& mask, std::vector <boost::filesystem::path>& files, bool prependRoot);
 
+        /**
+         *  A handle to the hash map.
+         */
+        HashMap* hashMap();
+
+        void setHashMap(HashMap const& map);
+
     private:
         template <typename IteratorT>
         void globImpl(IteratorT& i, std::vector <boost::filesystem::path>& result, std::string const& mask, bool prependRoot)
@@ -44,9 +53,15 @@ namespace StarGlob
                     if (checkMask(path, mask) && !isBlacklisted(path))
                     {
                         if (prependRoot)
+                        {
+                            hashes_.addFile((root_ / path).string());
                             result.push_back(root_ / path);
+                        }
                         else
+                        {
+                            hashes_.addFile((root_ / path).string(), path.string());
                             result.push_back(path);
+                        }
                     }
                 }
             }
@@ -69,5 +84,6 @@ namespace StarGlob
         std::vector <std::string> blackList_;
         std::vector <std::string> dirBlackList_;
         bool directories_;
+        HashMap hashes_;
     };
 }

@@ -12,9 +12,22 @@ namespace StarGlob
 //#####################################################################################################################
     Globber::Globber(std::string root, bool directories)
         : root_{std::move(root)}
+        , blackList_{}
+        , dirBlackList_{}
         , directories_{directories}
+        , hashes_{}
     {
 
+    }
+//---------------------------------------------------------------------------------------------------------------------
+    HashMap* Globber::hashMap()
+    {
+        return &hashes_;
+    }
+//---------------------------------------------------------------------------------------------------------------------
+    void Globber::setHashMap(HashMap const& map)
+    {
+        hashes_ = map;
     }
 //---------------------------------------------------------------------------------------------------------------------
     void Globber::setBlackList(std::vector <std::string> const& blackList)
