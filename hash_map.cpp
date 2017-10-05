@@ -49,9 +49,9 @@ namespace StarGlob
         auto hashString = makeHash(fileName);
 
         if (alias.empty())
-            fileHashMappings[fileName] = hashString;
+            fileHashMappings[(fs::path{prefix} / fileName).string()] = hashString;
         else
-            fileHashMappings[alias] = hashString;
+            fileHashMappings[(fs::path{prefix} / alias).string()] = hashString;
     }
 //---------------------------------------------------------------------------------------------------------------------
     std::unordered_map <std::string, ReadableHash>::iterator HashMap::verifyAgainst(std::string const& root)
@@ -68,6 +68,14 @@ namespace StarGlob
         }
 
         return std::end(fileHashMappings);
+    }
+//---------------------------------------------------------------------------------------------------------------------
+    void HashMap::append(HashMap const& map)
+    {
+        for (auto const& entry : map.fileHashMappings)
+        {
+            fileHashMappings[entry.first] = entry.second;
+        }
     }
 //---------------------------------------------------------------------------------------------------------------------
     void HashMap::toStream(std::ostream& stream) const

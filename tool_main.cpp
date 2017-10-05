@@ -84,12 +84,12 @@ int main(int argc, char** argv)
     HashMap hashes;
     for (auto const& glob : config.globbers)
     {
-        auto files = collectFiles(glob, hashes);
-
-        //TapeMaker<StarTape::CompressionType::Bzip2> tapeMaker{output};
         std::string prefix;
         if (glob.pathPrefix)
             prefix = glob.pathPrefix.get();
+        auto files = collectFiles(glob, hashes, prefix);
+
+        //TapeMaker<StarTape::CompressionType::Bzip2> tapeMaker{output};
         tapeMaker.addFiles(std::begin(files), std::end(files), glob.fileRoot, prefix);
     }
     if (vm.count("make-hashes"))
@@ -105,13 +105,15 @@ int main(int argc, char** argv)
     return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
-std::vector <boost::filesystem::path> collectFiles(StarGlob::Glob const& glob, StarGlob::HashMap& hashes)
+std::vector <boost::filesystem::path> collectFiles(StarGlob::Glob const& glob, StarGlob::HashMap& hashes, std::string const& prefix)
 {
     using namespace StarGlob;
 
     Globber globber{glob.fileRoot};
 
-    globber.setHashMap(hashes);
+    StarGlob::HashMap freshHashMap;
+    freshHashMap.prefix = prefix;
+    globber.setHashMap(freshHashMap);
 
     // glob filtering
     if (glob.directoryFilter)
@@ -124,7 +126,7 @@ std::vector <boost::filesystem::path> collectFiles(StarGlob::Glob const& glob, S
     for (auto const& mask : glob.globExpressions)
         globber.globRecursive(mask, fileContainer, false);
 
-    hashes = *globber.hashMap();
+    hashes.append(*globber.hashMap());
 
     return fileContainer;
 }

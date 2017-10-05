@@ -60,8 +60,8 @@ message("	${LSIMPLEJSON}")
 message("	${LSTARTAPE}")
 
 # link
-target_link_libraries(${star_glob} ${LSTARTAPE} ${LSIMPLEJSON} Boost::program_options Boost::iostreams Boost::filesystem Boost::system ${BZIP2_LIBRARIES} ${ZLIB_LIBRARIES})
-target_link_libraries(${star_glob_tool} ${LSTARTAPE} ${LSIMPLEJSON} Boost::program_options Boost::iostreams Boost::filesystem Boost::system ${BZIP2_LIBRARIES} ${ZLIB_LIBRARIES})
+target_link_libraries(${star_glob} ${LSTARTAPE} ${LSIMPLEJSON} Boost::program_options Boost::iostreams Boost::filesystem Boost::system ${BZIP2_LIBRARIES} ${ZLIB_LIBRARIES} cryptopp)
+target_link_libraries(${star_glob_tool} ${LSTARTAPE} ${LSIMPLEJSON} Boost::program_options Boost::iostreams Boost::filesystem Boost::system ${BZIP2_LIBRARIES} ${ZLIB_LIBRARIES} cryptopp)
 
 # include
 target_include_directories(${star_glob} PUBLIC "..")

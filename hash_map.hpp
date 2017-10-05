@@ -17,8 +17,17 @@ namespace StarGlob
                    , public JSON::Parsable <HashMap>
     {
         std::unordered_map <std::string, ReadableHash> fileHashMappings;
+        std::string prefix;
 
+        /**
+         *  Calculate hash of file and add it to the map.
+         */
         void addFile(std::string const& fileName, std::string const& alias = {});
+
+        /**
+         *  Add another map to this one. Does overwrite already existing elements.
+         */
+        void append(HashMap const& map);
 
         /**
          *  @return The first invalid hash comparison.
