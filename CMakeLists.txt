@@ -17,7 +17,7 @@ file(GLOB sources "*.cpp"
 )
 
 set(star_glob_tool_sources ${sources})
-list(REMOVE_ITEM sources "tool_main.cpp")
+list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/tool_main.cpp)
 
 # Define the library
 add_library(${star_glob} ${sources})
