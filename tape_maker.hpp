@@ -1,7 +1,7 @@
 #pragma once
 
 #include <star-tape/star_tape.hpp>
-#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 
 #include <type_traits>
 #include <fstream>
@@ -64,16 +64,32 @@ namespace StarGlob
          *  Creates a tape from a list of files.
          */
         template <typename IteratorT>
-        void addFiles(IteratorT const& begin, IteratorT const& end, std::string const& fileRoot, std::string const& prefix = {})
+        void addFiles(
+            IteratorT const& begin,
+            IteratorT const& end,
+            std::string const& fileRoot,
+            std::string const& prefix = {},
+            bool dereferenceLinks = false
+        )
         {
             namespace fs = boost::filesystem;
             using namespace StarTape::TapeOperations;
             for (auto i = begin; i != end; ++i)
             {
-                if (prefix.empty())
-                    operations_ << AddFile((fs::path{fileRoot} / *i).string());
+                if (!dereferenceLinks && fs::is_symlink(fs::symlink_status(*i)))
+                {
+                    if (prefix.empty())
+                        operations_ << AddLink(fs::read_symlink(*i).string(), (fs::path{fileRoot} / *i).string());
+                    else
+                        operations_ << AddLink(fs::read_symlink(*i).string(), (fs::path{prefix} / *i).lexically_normal().string());
+                }
                 else
-                    operations_ << AddFile((fs::path{fileRoot} / *i).string(), (fs::path{prefix} / *i).lexically_normal().string());
+                {
+                    if (prefix.empty())
+                        operations_ << AddFile((fs::path{fileRoot} / *i).string());
+                    else
+                        operations_ << AddFile((fs::path{fileRoot} / *i).string(), (fs::path{prefix} / *i).lexically_normal().string());
+                }
             }
         }
 
@@ -82,6 +98,15 @@ namespace StarGlob
          */
         void apply()
         {
+            operations_.apply(&archive(bundle_), nullptr, false);
+        }
+
+        /**
+         *  Writes changes.
+         */
+        void apply(std::function <void(int, int)> const& cb)
+        {
+            operations_.setProgressCallback(cb);
             operations_.apply(&archive(bundle_), nullptr, false);
         }
 

@@ -100,7 +100,11 @@ int main(int argc, char** argv)
         hashFile.push_back("hashes.json");
         tapeMaker.addFiles(std::begin(hashFile), std::end(hashFile), ".", "__meta/");
     }
-    tapeMaker.apply();
+    tapeMaker.apply([](int progress, int max)
+    {
+        if (max != 0)
+            std::cout << static_cast <int> (100. * progress / static_cast <double> (max)) << "%\n";
+    });
 
     return 0;
 }
