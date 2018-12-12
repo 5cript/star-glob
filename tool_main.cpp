@@ -17,6 +17,7 @@ int main(int argc, char** argv)
 
     std::string configPath;
     std::string output;
+    std::string compressionString;
     po::options_description desc{"Allowed options"};
     desc.add_options()
         ("help", "produce help message")
@@ -24,6 +25,12 @@ int main(int argc, char** argv)
         ("output,o", po::value<std::string>(&output), "file name to write to")
         ("init,i", "initialize with default config")
         ("make-hashes,h", "make __meta dir with hashes of each file")
+        (
+                "compression,c",
+                po::value <std::string>(&compressionString),
+                "Compression to use, not all are available on every system. Can be gz,bz2,none. "
+                "Defaults to strongest compression method."
+        )
     ;
 
     po::variables_map vm;
@@ -80,7 +87,46 @@ int main(int argc, char** argv)
     }
     auto&& config = loadConfig(configFile);
 
-    TapeMaker tapeMaker{output};
+    std::unique_ptr <TapeMakerBase> tapeMaker;
+    auto compression = BestAvailableCompression;
+    if (vm.count("compression"))
+    {
+        if (compressionString == "bz2")
+        {
+#if defined(ENABLE_BZIP2)
+            compression = StarTape::CompressionType::Bzip2;
+            tapeMaker.reset(new TapeMaker <StarTape::CompressionType::Bzip2>(output));
+#else
+            std::cerr << "Bzip2 not supported with this build\n";
+            return 1;
+#endif
+        }
+        else if (compressionString == "gz")
+        {
+#if defined(ENABLE_GZIP)
+            compression = StarTape::CompressionType::Gzip;
+            tapeMaker.reset(new TapeMaker <StarTape::CompressionType::Gzip>(output));
+#else
+            std::cerr << "Gzip not supported with this build\n";
+            return 1;
+#endif
+        }
+        else if (compressionString == "none")
+        {
+            compression = StarTape::CompressionType::None;
+            tapeMaker.reset(new TapeMaker <StarTape::CompressionType::None>(output));
+        }
+        else
+        {
+            std::cerr << "Unknown compression parameter: " << compressionString << "\n";
+            std::cerr << "It must be one of: gz, bz2, none";
+            return 1;
+        }
+    }
+    else {
+        tapeMaker.reset(new TapeMaker(output));
+    }
+
     HashMap hashes;
     for (auto const& glob : config.globbers)
     {
@@ -90,17 +136,15 @@ int main(int argc, char** argv)
         auto files = collectFiles(glob, hashes, prefix);
 
         //TapeMaker<StarTape::CompressionType::Bzip2> tapeMaker{output};
-        tapeMaker.addFiles(std::begin(files), std::end(files), glob.fileRoot, prefix);
+        addFilesToTapeMaker(tapeMaker.get(), compression, std::begin(files), std::end(files), glob.fileRoot, prefix, false);
     }
     if (vm.count("make-hashes"))
     {
         std::ofstream hashWriter{"hashes.json", std::ios_base::binary};
         hashWriter << hashes;
-        std::vector <boost::filesystem::path> hashFile;
-        hashFile.push_back("hashes.json");
-        tapeMaker.addFiles(std::begin(hashFile), std::end(hashFile), ".", "__meta/");
+        tapeMaker->addFile("hashes.json", ".", "__meta/");
     }
-    tapeMaker.apply([](int progress, int max)
+    tapeMaker->apply([](int progress, int max)
     {
         if (max != 0)
             std::cout << static_cast <int> (100. * progress / static_cast <double> (max)) << "%\n";

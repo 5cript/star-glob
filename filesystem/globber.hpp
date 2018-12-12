@@ -47,7 +47,7 @@ namespace StarGlob
 
                 if (cont)
                 {
-                    auto pathTemp = boost::filesystem::relative(i->path(), root_).string();
+                    auto pathTemp = i->path().lexically_relative(root_).string();
                     std::replace(pathTemp.begin(), pathTemp.end(), '\\', '/');
                     auto path = boost::filesystem::path{pathTemp};
                     if (checkMask(path, mask) && !isBlacklisted(path))
