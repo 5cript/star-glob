@@ -54,6 +54,14 @@ namespace StarGlob
             fileHashMappings[(fs::path{prefix} / alias).string()] = hashString;
     }
 //---------------------------------------------------------------------------------------------------------------------
+    void HashMap::addLink(std::string const& fileName, std::string const& location, std::string const& alias)
+    {
+        if (alias.empty())
+            links[(fs::path{prefix} / fileName).string()] = location;
+        else
+            links[(fs::path{prefix} / alias).string()] = location;
+    }
+//---------------------------------------------------------------------------------------------------------------------
     std::unordered_map <std::string, ReadableHash>::iterator HashMap::verifyAgainst(std::string const& root)
     {
         for (auto i = std::begin(fileHashMappings); i != std::end(fileHashMappings); ++i)

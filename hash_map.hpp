@@ -16,13 +16,23 @@ namespace StarGlob
     struct HashMap : public JSON::Stringifiable <HashMap>
                    , public JSON::Parsable <HashMap>
     {
+        /// the hash of each file
         std::unordered_map <std::string, ReadableHash> fileHashMappings;
+
+        /// links will not get hashed, its nonsense, but instead their locations are added.
+        std::unordered_map <std::string, std::string> links;
+
         std::string prefix;
 
         /**
          *  Calculate hash of file and add it to the map.
          */
         void addFile(std::string const& fileName, std::string const& alias = {});
+
+        /**
+         *  Calculate hash of file and add it to the map.
+         */
+        void addLink(std::string const& fileName, std::string const& location, std::string const& alias = {});
 
         /**
          *  Add another map to this one. Does overwrite already existing elements.
@@ -53,5 +63,5 @@ namespace StarGlob
 BOOST_FUSION_ADAPT_STRUCT
 (
     StarGlob::HashMap,
-    fileHashMappings
+    fileHashMappings, links
 )

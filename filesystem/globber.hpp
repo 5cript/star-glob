@@ -44,6 +44,7 @@ namespace StarGlob
                     cont = true;
                 else if (directories_ && is_directory(i->status()))
                     cont = true;
+                bool symlink = is_symlink(i->symlink_status());
 
                 if (cont)
                 {
@@ -54,12 +55,18 @@ namespace StarGlob
                     {
                         if (prependRoot)
                         {
-                            hashes_.addFile((root_ / path).string());
+                            if (symlink)
+                                hashes_.addLink((root_ / path).string(), read_symlink(root_ / path).string());
+                            else
+                                hashes_.addFile((root_ / path).string());
                             result.push_back(root_ / path);
                         }
                         else
                         {
-                            hashes_.addFile((root_ / path).string(), path.string());
+                            if (symlink)
+                                hashes_.addLink((root_ / path).string(), read_symlink(root_ / path).string());
+                            else
+                                hashes_.addFile((root_ / path).string(), path.string());
                             result.push_back(path);
                         }
                     }
